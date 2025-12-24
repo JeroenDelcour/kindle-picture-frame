@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+    <information>
+        <name>Picture Frame</name>
+        <version>0.1</version>
+        <author>Jeroen Delcour</author>
+        <id>pictureframe</id>
+    </information>
+    <menus>
+        <menu type="json" dynamic="true">menu.json</menu>
+    </menus>
+</extension>

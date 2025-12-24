@@ -1,0 +1,17 @@
+{
+    "items": [
+    {
+        "name": "Run until reboot",
+        "exitmenu": false,
+        "refresh": false,
+        "status": false,
+        "action": "./bin/run_until_reboot.sh"
+    }, {
+        "name": "Run once (debug)",
+        "exitmenu": false,
+		"refresh": false,
+		"status": false,
+        "action": "./bin/run_once.sh"
+    }
+    ]
+}
