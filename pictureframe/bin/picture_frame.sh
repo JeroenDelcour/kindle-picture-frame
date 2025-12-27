@@ -2,6 +2,7 @@
 
 PICFRAME_BINDIR="$(dirname "$(realpath "${0}")")"
 PICFRAME_BASEDIR="${PICFRAME_BINDIR%*/bin}"
+CONFIG_FILE="${PICFRAME_BASEDIR}/queries.txt"
 
 setup_fbink()
 {
@@ -58,14 +59,42 @@ setup_fbink()
 
 run_once()
 {
-	# Search query URL
-	FEED_URL=$(cat "${PICFRAME_BASEDIR}/bin/deviantart_rss_url.txt")
+	# Check if config file exists
+	if [ ! -f "$CONFIG_FILE" ]; then
+		echo "Error: $CONFIG_FILE not found!"
+		echo "Please create a text file with one RSS query string per line."
+		exit 1
+	fi
 
-	# Fetch RSS, extract image URLs, and pick a random one
-	# We use grep to find the media:content url, cut to extract it, and shuf to pick one.
+	# Pick a random query from the file
+	# grep -v '^\s*#'  -> Removes lines starting with # (comments)
+	# grep -v '^\s*$'  -> Removes empty lines
+	# shuf -n 1        -> Picks one random line from what's left
+	SELECTED_QUERY=$(grep -v '^\s*#' "$CONFIG_FILE" | grep -v '^\s*$' | shuf -n 1)
+
+	if [ -z "$SELECTED_QUERY" ]; then
+		echo "Error: Config file is empty or contains only comments."
+		exit 1
+	fi
+
+	FEED_URL="https://backend.deviantart.com/rss.xml?q=$SELECTED_QUERY"
+	echo "FEED URL: $FEED_URL"
+
+	# Fetch RSS, extract image URLs, and pick a random one.
+	# Only selects 'nonadult' images (DeviantArt's "Popular" feed can get weird fast).
 	IMAGE_URL=$(curl -s "$FEED_URL" | \
-	grep -o '<media:content url="[^"]*"' | \
-	cut -d'"' -f2 | \
+	awk -v RS='<item>' '
+		# If the item contains "media:rating>adult", SKIP IT.
+		!/media:rating>adult/ {
+			# If we are here, the item is NOT adult.
+			# Find the media:content url.
+			if (match($0, /media:content url="[^"]*"/)) {
+				url_tag = substr($0, RSTART, RLENGTH)
+				split(url_tag, parts, "\"")
+				print parts[2]
+			}
+		}
+	' | \
 	shuf -n 1)
 
 	if [ -z "$IMAGE_URL" ]; then
@@ -81,6 +110,7 @@ run_once()
 	# `--flatten` ignores alpha channel.
 	# for more details on fbink cli arguments, see: https://github.com/NiLuJe/FBInk/blob/master/CLI.md
 	${FBINK_BIN} --clear
+	sleep 1
 	${FBINK_BIN} -g file="${PICFRAME_BASEDIR}/deviantart_image",w=-2,halign=center,valign=center,dither --flatten
 
 	return 0
@@ -88,20 +118,24 @@ run_once()
 
 run_until_reboot()
 {
+	# Disable Kindle's automatic deep sleep after 10 minutes of inactivity
+	lipc-set-prop com.lab126.powerd preventScreenSaver 1
+
 	run_once
 	while true
 	do
+		# Set a wake-up alarm
+		# The number below is sleep time in seconds
+		echo "" > /sys/class/rtc/rtc1/wakealarm
+		echo "+1800" > /sys/class/rtc/rtc1/wakealarm
+		# Deep sleep until the alarm above is triggered
+		echo mem > /sys/power/state
+
 		# Make sure there is enough time to reconnect to the wifi
-		sleep 30
+		sleep 10
 		# Refresh picture
 		run_once
 		sleep 5
-
-		echo "" > /sys/class/rtc/rtc1/wakealarm
-		# Following line contains the sleep time in seconds
-		echo "+3600" > /sys/class/rtc/rtc1/wakealarm
-		# Following line will put device into deep sleep until the alarm above is triggered
-		echo mem > /sys/power/state
 	done
 
 	return 0

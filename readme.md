@@ -1,6 +1,6 @@
 # Kindle picture frame
 
-A simple picture frame that downloads a random image from DeviantArt and displays it. Refreshes once an hour, sleeping in between to conserve battery.
+A simple picture frame that downloads a random image from DeviantArt and displays it. Refreshes every half hour, sleeping in between to conserve battery.
 
 Tested on my Kindle PaperWhite 4 (10th generation).
 
@@ -9,13 +9,19 @@ Tested on my Kindle PaperWhite 4 (10th generation).
 1. [Jailbreak your Kindle and install KUAL](https://kindlemodding.org/kindle-models)
 2. Download the latest release, unzip and move the "pictureframe" folder to the "extensions" folder on your Kindle
 
-It might be necessary to disable deep sleep, as per [this blog post](https://blog.4dcu.be/diy/2020/10/04/PythonKindleDashboard_2.html), by putting `~ds` in the search bar and hitting enter.
-
-By default, it searches DeviantArt for popular images with the sketch/pencil/graphite/ink/monochrome tags. You can customize the RSS query URL in `pictureframe/bin/deviantart_rss_url.txt`.
-
 ## How to use
 
 On your Kindle, open KUAL. Inside the "Picture frame" menu, press "Run until reboot".
+
+To skip a picture, press the power button once to wake up the Kindle. After ~10 seconds, it should refresh with a new image.
+
+To exit, restart the Kindle by long-pressing the power button.
+
+Be sure to set the Kindle's brightness to zero to maximize battery life.
+
+## Customizing the DeviantArt RSS queries
+
+There's a list of RSS queries with different image categories in `pictureframe/queries.txt`. You can customize the tags it searches for there (see [DeviantArt's documentation](https://www.deviantart.com/developers/rss)). I've chosen them based on what looks good on a monochrome e-ink display, while trying to avoid NSFW stuff (DeviantArt's "Popular" feed can get weird fast). Note that images with the `media:rating` field set to `adult` are skipped in the code.
 
 ## Inspiration
 - [Reviving kindle paperwhite 7th gen blog post](https://terminalbytes.com/reviving-kindle-paperwhite-7th-gen/) ([GitHub repository](https://github.com/terminalbytes/kindle-dashboard))
